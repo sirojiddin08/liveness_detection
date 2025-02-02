@@ -89,13 +89,13 @@
 
     <!-- Load face-api.js from CDN -->
     <script src="js/face-api.js"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand(); // Expands the WebView to fullscreen
         tg.ready(); // Notifies Telegram that the WebApp is ready
         tg.sendData(JSON.stringify({ key: "value" }));
-    </script>
+    </script> -->
 
 
     <script>
@@ -181,7 +181,7 @@
                                     gotPhoto = true;
                                     setTimeout(() => {
                                         takeScreenshot("blinking", detections.detection.box);
-                                    }, 200);
+                                    }, 100);
                                 }
                             } else {
                                 overlay.style.borderColor = "green"; // Green if inside oval
