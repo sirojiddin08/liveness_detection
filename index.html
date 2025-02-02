@@ -90,8 +90,8 @@
 
     <!-- Load face-api.js from CDN -->
     <script src="js/face-api.js"></script>
-    <!-- <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- <script>
         const tg = window.Telegram.WebApp;
         tg.expand(); // Expands the WebView to fullscreen
         tg.ready(); // Notifies Telegram that the WebApp is ready
@@ -156,16 +156,8 @@
         }
 
         async function setupCamera() {
-            const cameraStatus = document.getElementById("cameraStatus");
-
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: {
-                        width: { ideal: 640 },
-                        height: { ideal: 480 },
-                        frameRate: { ideal: 15 },
-                    },
-                });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
                 video.srcObject = stream;
                 statusText.textContent = "Camera is active and ready!";
             } catch (error) {
@@ -198,10 +190,7 @@
             const ovalRect = overlay.getBoundingClientRect();
 
             setInterval(async () => {
-                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
-                    inputSize: 320, // Adjust input size to reduce computation
-                    scoreThreshold: 0.5 // Keep this threshold low for accurate detection
-                })).withFaceLandmarks();
+                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
 
                 if (detections) {
                     let faceBox = detections.detection.box;
