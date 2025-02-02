@@ -40,6 +40,8 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            transform: scaleX(-1); /* Mirror the camera feed */
+            -webkit-transform: scaleX(-1); /* Safari fix */
         }
 
         /* Oval overlay for face alignment */
@@ -303,6 +305,10 @@
             canvas.width = width;
             canvas.height = height;
 
+            // Flip context horizontally before drawing
+            context.translate(width, 0);
+            context.scale(-1, 1);
+
             // Draw the padded face area onto the canvas
             context.drawImage(
                 video,
@@ -366,24 +372,8 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
-            redirectToExternalBrowser();
             initialize();
         });
-
-        function isTelegramWebView() {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            return /Telegram/i.test(userAgent);
-        }
-
-        function redirectToExternalBrowser() {
-            if (isTelegramWebView()) {
-                alert("For a better experience, please open this link in your default browser.");
-                const url = window.location.href;
-                setTimeout(() => {
-                    window.location.href = "https://google.com"; // Redirect to prevent WebView usage
-                }, 3000);
-            }
-        }
 
     </script>
 </body>
