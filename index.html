@@ -91,13 +91,6 @@
     <!-- Load face-api.js from CDN -->
     <script src="js/face-api.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Expands the WebView to fullscreen
-        tg.ready(); // Notifies Telegram that the WebApp is ready
-        tg.sendData(JSON.stringify({ key: "value" }));
-    </script> -->
-
 
     <script>
         // Telegram Web App initialization
@@ -373,8 +366,24 @@
         }
 
         document.addEventListener("DOMContentLoaded", () => {
+            redirectToExternalBrowser();
             initialize();
         });
+
+        function isTelegramWebView() {
+            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
+            return /Telegram/i.test(userAgent);
+        }
+
+        function redirectToExternalBrowser() {
+            if (isTelegramWebView()) {
+                alert("For a better experience, please open this link in your default browser.");
+                const url = window.location.href;
+                setTimeout(() => {
+                    window.location.href = "https://google.com"; // Redirect to prevent WebView usage
+                }, 3000);
+            }
+        }
 
     </script>
 </body>
