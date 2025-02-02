@@ -111,7 +111,13 @@
 
         async function setupCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 },
+                        frameRate: { ideal: 15 } // Lower frame rate
+                    }
+                });
                 video.srcObject = stream;
             } catch (error) {
                 statusText.textContent = "Webcam access denied!";
@@ -120,12 +126,10 @@
         }
 
         async function loadModels() {
-            await faceapi.nets.tinyFaceDetector.loadFromUri("models");
-            await faceapi.nets.faceLandmark68Net.loadFromUri("models");
-            // await faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
-            // await faceapi.nets.faceExpressionNet.loadFromUri('/models')
+            await faceapi.nets.tinyFaceDetector.loadFromUri('models');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('models');
             statusText.textContent = "Models loaded. Detecting face...";
-            detectFace();
+            await detectFace();
         }
 
         function isPointInOval(point, oval) {
@@ -144,7 +148,10 @@
             const ovalRect = overlay.getBoundingClientRect();
 
             setInterval(async () => {
-                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions({
+                    inputSize: 320, // Adjust input size to reduce computation
+                    scoreThreshold: 0.5 // Keep this threshold low for accurate detection
+                })).withFaceLandmarks();
 
                 if (detections) {
                     let faceBox = detections.detection.box;
@@ -198,7 +205,7 @@
                     overlay.style.borderColor = "red";
                     statusText.textContent = "No face detected!";
                 }
-            }, 50);
+            }, 200);
         }
 
         function detectBlink(detections) {
