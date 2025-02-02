@@ -86,6 +86,7 @@
         <div id="overlay"></div>
     </div>
     <div id="status">Loading models...</div>
+    <button id="retryCamera" style="display: none;" onclick="retryCameraSetup()">Retry Camera</button>
 
     <!-- Load face-api.js from CDN -->
     <script src="js/face-api.js"></script>
@@ -117,18 +118,59 @@
             };
         }
 
+        async function checkCameraCapabilities() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === "videoinput");
+
+                if (videoDevices.length === 0) {
+                    statusText.textContent = "No camera detected!";
+                    throw new Error("No camera found.");
+                }
+
+                // Check if the user has already granted permissions
+                const permissions = await navigator.permissions.query({ name: "camera" });
+                if (permissions.state === "denied") {
+                    statusText.textContent = "Camera permissions denied. Please enable them in your browser settings.";
+                    throw new Error("Camera permissions denied.");
+                }
+            } catch (error) {
+                console.error("Camera check failed:", error);
+                document.getElementById("retryCamera").style.display = "block";
+                statusText.textContent = "Camera is not available. Please check your device and permissions.";
+            }
+        }
+
+        async function retryCameraSetup() {
+            document.getElementById("retryCamera").style.display = "none";
+            await setupCamera();
+        }
+
+        function checkBrowserCompatibility() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                statusText.textContent = "Your browser does not support camera access. Please use the latest version of Chrome, Firefox, or Edge.";
+                return false;
+            }
+
+            return true;
+        }
+
         async function setupCamera() {
+            const cameraStatus = document.getElementById("cameraStatus");
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         width: { ideal: 640 },
                         height: { ideal: 480 },
-                        frameRate: { ideal: 15 } // Lower frame rate
-                    }
+                        frameRate: { ideal: 15 },
+                    },
                 });
                 video.srcObject = stream;
+                statusText.textContent = "Camera is active and ready!";
             } catch (error) {
                 statusText.textContent = "Webcam access denied!";
+                document.getElementById("retryCamera").style.display = "block";
                 console.error(error);
             }
         }
@@ -312,8 +354,18 @@
                 .catch(error => console.error("Error sending image:", error));
         }
 
-        // Initialize Webcam and Load Models
-        setupCamera().then(loadModels);
+        // Initialize system
+        async function initialize() {
+            const isCompatible = checkBrowserCompatibility();
+            if (!isCompatible) return;
+
+            await checkCameraCapabilities();
+            await setupCamera();
+            await loadModels();
+        }
+
+        initialize();
+
     </script>
 </body>
 
