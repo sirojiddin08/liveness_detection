@@ -56,7 +56,8 @@
         #status {
             margin-top: 10px;
             color: white;
-            font-size: 20px;
+            font-size: 30px;
+            text-align: center;
         }
 
         /* Ovaldan tashqaridagi blur effekti */
@@ -76,12 +77,12 @@
 
 <body>
     <canvas id="captureCanvas" style="display: none;"></canvas>
+    <div id="status">Sahifa yuklanmoqda...</div>
     <div id="container">
         <video id="video" autoplay playsinline></video>
         <div id="blurOverlay"></div>
         <div id="overlay"></div>
     </div>
-    <div id="status">Sahifa yuklanmoqda...</div>
     <button id="retryCamera" style="display: none;" onclick="retryCameraSetup()">Kamerani qayta ishga tushirish</button>
 
     <!-- face-api.js yuklash -->
@@ -358,9 +359,10 @@
         }
 
         function showReturnToTelegramButton() {
+            document.getElementById("container").style.display = "none";
             const returnButton = document.createElement("button");
             returnButton.textContent = "Telegram botga qaytish";
-            returnButton.style.cssText = "margin-top: 20px; padding: 10px 20px; font-size: 16px; background-color: #0088cc; color: white; border: none; cursor: pointer; border-radius: 5px;";
+            returnButton.style.cssText = "position: absolute; margin-top: 20px; padding: 10px 20px; font-size: 36px; background-color: #0088cc; color: white; border: none; cursor: pointer; border-radius: 5px;";
             
             // Redirect to the Telegram bot when clicked
             returnButton.onclick = returnToTelegram;
@@ -373,7 +375,7 @@
 
         function returnToTelegram() {
             const { chat_id } = getQueryParams(); // Get chat ID from URL
-            window.location.href = `https://t.me/maktab_dmtt_bot?confirmed=${chat_id}`; 
+            window.location.href = `https://t.me/maktab_dmtt_bot?start=confirmed_${chat_id}`;
             // window.close();
         }
 
