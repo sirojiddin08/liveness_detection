@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Liveness Detection with Blur</title>
+    <style>
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        /* Container for video and overlay */
+        #container {
+            position: relative;
+            width: 640px;
+            height: 470px;
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            /* Flip horizontally */
+            -webkit-transform: scaleX(-1);
+            /* For Safari compatibility */
+        }
+
+        /* Oval overlay for face alignment */
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 4px solid red;
+            /* Default Red (Error) */
+            width: 250px;
+            height: 350px;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        #status {
+            margin-top: 10px;
+            color: white;
+            font-size: 20px;
+        }
+
+        /* Blur effect outside oval */
+        #blurOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            /* clip-path: path('M0,0H640V480H0Z M235,110 A125,175,0,1,0,319.9,65Z'); */
+            clip-path: path('M0,0H640V480H0Z M319,65 A125,175,0,1,0,319.9,65Z');
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <video id="video" autoplay playsinline></video>
+        <div id="blurOverlay"></div>
+        <div id="overlay"></div>
+    </div>
+    <div id="status">Loading models...</div>
+    <canvas id="captureCanvas" style="display: none;"></canvas>
+
+    <!-- Load face-api.js from CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/dist/face-api.js"></script>
+
+    <script>
+
+        const video = document.getElementById("video");
+        const statusText = document.getElementById("status");
+        const overlay = document.getElementById("overlay");
+
+        let blinkState = "OPEN"; // To track blink status
+        const SMILE_THRESHOLD = 0.5; // Threshold for smile detection
+        let livenessConfirmed = false;
+        let faceInsideOval = false;
+
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                video.srcObject = stream;
+            } catch (error) {
+                statusText.textContent = "Webcam access denied!";
+                console.error(error);
+            }
+        }
+
+        async function loadModels() {
+            await faceapi.nets.tinyFaceDetector.loadFromUri("models");
+            await faceapi.nets.faceLandmark68Net.loadFromUri("models");
+            await faceapi.nets.faceRecognitionNet.loadFromUri('/models'),
+                await faceapi.nets.faceExpressionNet.loadFromUri('/models')
+            statusText.textContent = "Models loaded. Detecting face...";
+            detectFace();
+        }
+
+        function isPointInOval(point, oval) {
+            let cx = oval.left + oval.width / 2;
+            let cy = oval.top + oval.height / 2;
+            let rx = oval.width / 2;
+            let ry = oval.height / 2;
+            let dx = point.x - cx;
+            let dy = point.y - cy;
+            // Adjust face center based on this threshold ex: 0.1            
+            return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 0.1;
+        }
+
+        async function detectFace() {
+            const videoRect = video.getBoundingClientRect();
+            const ovalRect = overlay.getBoundingClientRect();
+
+            setInterval(async () => {
+                const detections = await faceapi
+                    .detectSingleFace(video, new faceapi.TinyFaceDetectorOptions())
+                    .withFaceExpressions();
+
+                if (detections) {
+                    let faceBox = detections.detection.box;
+                    let faceCenter = { x: faceBox.x + faceBox.width / 2, y: faceBox.y + faceBox.height / 2 };
+
+                    let scaleX = videoRect.width / video.videoWidth;
+                    let scaleY = videoRect.height / video.videoHeight;
+
+                    let faceCenterViewport = {
+                        x: videoRect.left + faceCenter.x * scaleX,
+                        y: videoRect.top + faceCenter.y * scaleY,
+                    };
+
+                    faceInsideOval = isPointInOval(faceCenterViewport, ovalRect);
+
+                    if (faceInsideOval) {
+                        overlay.style.borderColor = "blue"; // Blue when inside the oval
+
+                        const expressions = detections.expressions;
+                        const smileProbability = expressions.happy || 0;
+
+                        if (smileProbability > SMILE_THRESHOLD) {
+                            overlay.style.borderColor = "green"; // Green if smiling
+                            statusText.textContent = "Liveness confirmed! Thank you for smiling!";
+                            livenessConfirmed = true;
+
+                            // Take screenshot after smile confirmation
+                            takeScreenshot("smiling");
+                        } else {
+                            overlay.style.borderColor = "blue"; // Keep blue if inside oval but not smiling
+                            statusText.textContent = "Please smile to confirm liveness!";
+                            livenessConfirmed = false;
+
+                            // Take screenshot when not smiling
+                            // takeScreenshot("not_smiling");
+                        }
+                    } else {
+                        overlay.style.borderColor = "red"; // Red if outside the oval
+                        statusText.textContent = "Align face inside the oval!";
+                    }
+                } else {
+                    overlay.style.borderColor = "red"; // Red if no face detected
+                    statusText.textContent = "No face detected!";
+                }
+            }, 500);
+        }
+
+        function takeScreenshot(state) {
+            const canvas = document.getElementById("captureCanvas");
+            const context = canvas.getContext("2d");
+
+            // Set canvas size to match video dimensions
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            // Draw current video frame onto canvas
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Convert canvas content to a data URL (Base64 image)
+            const dataURL = canvas.toDataURL("image/png");
+
+            // Save the image or display it (example: console log the URL)
+            console.log(`Screenshot (${state}):`);
+
+            // Optionally, you can trigger a download
+            const link = document.createElement("a");
+            link.href = dataURL;
+            link.download = `${state}_face.png`;
+            link.click();
+        }
+
+        // Initialize Webcam and Load Models
+        setupCamera().then(loadModels);
+    </script>
+</body>
+
+</html>
