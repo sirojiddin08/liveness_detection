@@ -3,16 +3,9 @@
 
 <head>
     <meta charset="UTF-8">
-    <!-- <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <meta name="tg:theme" content="light">
-    <meta name="tg:swipes:x" content="none">
-    <meta name="tg:swipes:y" content="none">
-    <meta name="tg:theme-accent" content="#FFFFFF">
-    <meta name="theme-color" content="#000000">
-    <meta name="tg:theme-background" content="#000000"> -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <meta property="og:site_name" content="Face Detection and Liveness check">
     <meta property="og:title" content="Liveness Detection">
-    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
     <title>Liveness Detection</title>
 
     <style>
@@ -95,18 +88,6 @@
     <script src="js/face-api.js"></script>
 
     <script>
-        // Telegram Web App initialization
-        const tg = window.Telegram.WebApp;
-        tg.expand(); // Expands the WebView to fullscreen
-        tg.ready(); // Notifies Telegram that the WebApp is ready
-        // tg.setBackgroundColor("black"); // Prevents unnecessary UI rendering
-        console.log("Telegram Web App initialized");
-
-        document.getElementById("openBrowser").addEventListener("click", () => {
-            const url = "https://sirojiddin08.github.io/liveness_detection"; // Replace with your actual URL
-            tg.openLink(url, { try_instant_view: false }); // Open in external browser
-        });
-
         const video = document.getElementById("video");
         const statusText = document.getElementById("status");
         const overlay = document.getElementById("overlay");
