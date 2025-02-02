@@ -100,6 +100,13 @@
 
 
     <script>
+        // Telegram Web App initialization
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Expands the WebView to fullscreen
+        tg.ready(); // Notifies Telegram that the WebApp is ready
+        tg.setBackgroundColor("black"); // Prevents unnecessary UI rendering
+        console.log("Telegram Web App initialized");
+
         const video = document.getElementById("video");
         const statusText = document.getElementById("status");
         const overlay = document.getElementById("overlay");
@@ -114,7 +121,7 @@
         function getQueryParams() {
             const urlParams = new URLSearchParams(window.location.search);
             return {
-                chat_id: urlParams.get("chat_id"),
+                chat_id: urlParams.get("chat_id") || 720530019,
             };
         }
 
@@ -157,7 +164,14 @@
 
         async function setupCamera() {
             try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: {} });
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        width: { ideal: 480 },
+                        height: { ideal: 360 },
+                        frameRate: { ideal: 10 }, // Lower frame rate to reduce CPU/GPU usage
+                        facingMode: "user" // Ensure front camera is used
+                    }
+                });
                 video.srcObject = stream;
                 statusText.textContent = "Camera is active and ready!";
             } catch (error) {
@@ -190,7 +204,12 @@
             const ovalRect = overlay.getBoundingClientRect();
 
             setInterval(async () => {
-                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions()).withFaceLandmarks();
+                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions(
+                    {
+                        inputSize: 160, // Reduce image resolution to speed up detection
+                        scoreThreshold: 0.6 // Increase threshold to avoid false positives
+                    }
+                )).withFaceLandmarks();
 
                 if (detections) {
                     let faceBox = detections.detection.box;
@@ -245,7 +264,7 @@
                     overlay.style.borderColor = "red";
                     statusText.textContent = "No face detected!";
                 }
-            }, 1000);
+            }, 100);
         }
 
         function detectBlink(detections) {
@@ -353,7 +372,9 @@
             await loadModels();
         }
 
-        initialize();
+        document.addEventListener("DOMContentLoaded", () => {
+            initialize();
+        });
 
     </script>
 </body>
