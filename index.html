@@ -79,7 +79,7 @@
 </head>
 
 <body>
-    <!-- <canvas id="captureCanvas" style="display: none;"></canvas> -->
+    <canvas id="captureCanvas" style="display: none;"></canvas>
     <div id="container">
         <video id="video" autoplay playsinline></video>
         <div id="blurOverlay"></div>
@@ -89,7 +89,6 @@
 
     <!-- Load face-api.js from CDN -->
     <script src="js/face-api.js"></script>
-    <!-- <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/dist/face-api.js"></script> -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
         const tg = window.Telegram.WebApp;
@@ -100,12 +99,13 @@
 
 
     <script>
-
         const video = document.getElementById("video");
         const statusText = document.getElementById("status");
         const overlay = document.getElementById("overlay");
 
-        let blinkState = "OPEN"; // To track blink status
+        let gotPhoto = false;
+        let blinkCounter = 0;
+        let blinkState = false;
         let faceInsideOval = false;
         const blinkThreshold = 0.25;
 
@@ -163,13 +163,33 @@
                     if (faceInsideOval) {
                         const isBlinking = detectBlink(detections);
                         console.log("isBlinking: ", isBlinking);
-                        // if (isBlinking) {
-                        //     takeScreenshot("blinking");
-                        // }
 
-                        overlay.style.borderColor = "green"; // Green if inside oval
-                        statusText.textContent = "Face detected inside oval. Blink to confirm!";
+                        if (isBlinking) {
+                            // Increment the blink counter on each detected blink
+                            blinkCounter++;
+
+                            if (blinkCounter > 1) { // Skip the first blink
+                                blinkState = true;
+                                overlay.style.borderColor = "green";
+                                statusText.textContent = "Liveness confirmed!";
+                            }
+                        } else {
+                            if (blinkState) {
+                                overlay.style.borderColor = "green";
+                                statusText.textContent = "Liveness confirmed!";
+                                if (!gotPhoto) {
+                                    gotPhoto = true;
+                                    setTimeout(() => {
+                                        takeScreenshot("blinking", detections.detection.box);
+                                    }, 200);
+                                }
+                            } else {
+                                overlay.style.borderColor = "green"; // Green if inside oval
+                                statusText.textContent = "Face detected inside oval. Blink to confirm!";
+                            }
+                        }
                     } else {
+                        blinkState = false;
                         overlay.style.borderColor = "red"; // Red if outside
                         statusText.textContent = "Align face inside the oval!";
                     }
@@ -204,22 +224,44 @@
             return EAR < blinkThreshold; // Threshold for blink detection
         }
 
-        function takeScreenshot(state) {
+        function takeScreenshot(state, faceBox) {
             const canvas = document.getElementById("captureCanvas");
             const context = canvas.getContext("2d");
 
-            // Set canvas size to match video dimensions
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
+            // Define padding for extra space around the face
+            const widthPadding = 30; // Adjust this value for more/less padding
+            const heightPadding = 60; // Adjust this value for more/less padding
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
 
-            // Draw current video frame onto canvas
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            // Calculate new dimensions with padding
+            const x = Math.max(0, faceBox.x - widthPadding); // Ensure it doesn't go out of bounds
+            const y = Math.max(0, faceBox.y - heightPadding);
+            const width = Math.min(faceBox.width + 2 * widthPadding, videoWidth - x); // Keep within video bounds
+            const height = Math.min(faceBox.height + 2 * heightPadding, videoHeight - y);
+
+            // Set canvas size to match the padded face area
+            canvas.width = width;
+            canvas.height = height;
+
+            // Draw the padded face area onto the canvas
+            context.drawImage(
+                video,
+                x, // Source X (top-left corner with padding)
+                y, // Source Y (top-left corner with padding)
+                width, // Source width (face width with padding)
+                height, // Source height (face height with padding)
+                0, // Destination X (start at top-left of the canvas)
+                0, // Destination Y (start at top-left of the canvas)
+                canvas.width, // Destination width
+                canvas.height // Destination height
+            );
 
             // Convert canvas content to a data URL (Base64 image)
             const dataURL = canvas.toDataURL("image/png");
 
             // Save the image or display it (example: console log the URL)
-            console.log(`Screenshot (${state}):`);
+            console.log(`Screenshot (${state}):`, dataURL);
 
             // Optionally, you can trigger a download
             const link = document.createElement("a");
