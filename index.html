@@ -12,7 +12,7 @@
     <meta name="tg:theme-background" content="#000000"> -->
     <meta property="og:site_name" content="Face Detection and Liveness check">
     <meta property="og:title" content="Liveness Detection">
-
+    <script src="https://telegram.org/js/telegram-web-app.js?56"></script>
     <title>Liveness Detection</title>
 
     <style>
@@ -81,6 +81,7 @@
 </head>
 
 <body>
+    <button id="openBrowser">Open Liveness Detection in Browser</button>
     <canvas id="captureCanvas" style="display: none;"></canvas>
     <div id="container">
         <video id="video" autoplay playsinline></video>
@@ -92,7 +93,6 @@
 
     <!-- Load face-api.js from CDN -->
     <script src="js/face-api.js"></script>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <script>
         // Telegram Web App initialization
@@ -101,6 +101,11 @@
         tg.ready(); // Notifies Telegram that the WebApp is ready
         tg.setBackgroundColor("black"); // Prevents unnecessary UI rendering
         console.log("Telegram Web App initialized");
+
+        document.getElementById("openBrowser").addEventListener("click", () => {
+            const url = "https://sirojiddin08.github.io/liveness_detection"; // Replace with your actual URL
+            tg.openLink(url, { try_instant_view: false }); // Open in external browser
+        });
 
         const video = document.getElementById("video");
         const statusText = document.getElementById("status");
