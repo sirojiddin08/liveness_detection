@@ -230,6 +230,8 @@
                                     setTimeout(() => {
                                         const dataURL = takeScreenshot("blink", detections.detection.box);
                                         sendToTelegramBot(dataURL);
+
+                                        showReturnToTelegramButton();
                                     }, 100);
                                 }
                             } else {
@@ -353,6 +355,26 @@
                 .then(response => response.json())
                 .then(data => console.log("Telegram Response:", data))
                 .catch(error => console.error("Xabar jo‘natishda xato:", error));
+        }
+
+        function showReturnToTelegramButton() {
+            const returnButton = document.createElement("button");
+            returnButton.textContent = "Telegram botga qaytish";
+            returnButton.style.cssText = "margin-top: 20px; padding: 10px 20px; font-size: 16px; background-color: #0088cc; color: white; border: none; cursor: pointer; border-radius: 5px;";
+            
+            // Redirect to the Telegram bot when clicked
+            returnButton.onclick = returnToTelegram;
+
+            document.body.appendChild(returnButton);
+
+            // ✅ Auto-redirect to Telegram after 2 seconds
+            setTimeout(returnToTelegram, 1000);
+        }
+
+        function returnToTelegram() {
+            const { chat_id } = getQueryParams(); // Get chat ID from URL
+            window.location.href = `https://t.me/maktab_dmtt_bot?confirmed=${chat_id}`; 
+            window.close();
         }
 
         // Initialize system
