@@ -97,6 +97,7 @@
         let blinkState = false;
         let faceInsideOval = false;
         const blinkThreshold = 0.25;
+        const SMILE_THRESHOLD = 0.5;
 
         function getQueryParams() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -164,6 +165,9 @@
         async function loadModels() {
             await faceapi.nets.tinyFaceDetector.loadFromUri('models');
             await faceapi.nets.faceLandmark68Net.loadFromUri('models');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('models'),
+            await faceapi.nets.faceExpressionNet.loadFromUri('models')
+
             statusText.textContent = "Models loaded. Detecting face...";
             await detectFace();
         }
@@ -189,7 +193,7 @@
                         inputSize: 160, // Reduce image resolution to speed up detection
                         scoreThreshold: 0.6 // Increase threshold to avoid false positives
                     }
-                )).withFaceLandmarks();
+                )).withFaceLandmarks().withFaceExpressions();
 
                 if (detections) {
                     let faceBox = detections.detection.box;
@@ -207,9 +211,10 @@
 
                     if (faceInsideOval) {
                         const isBlinking = detectBlink(detections);
-                        console.log("isBlinking: ", isBlinking);
+                        const isSmiling = detectSmile(detections);
+                        // console.log("isBlinking: ", isBlinking, "isSmiling: ", isSmiling);
 
-                        if (isBlinking) {
+                        if (isBlinking || isSmiling) {
                             // Increment the blink counter on each detected blink
                             blinkCounter++;
 
@@ -268,6 +273,13 @@
             const EAR = (leftEAR + rightEAR) / 2.0;
 
             return EAR < blinkThreshold; // Threshold for blink detection
+        }
+
+        function detectSmile(detections) {
+            const expressions = detections.expressions;
+            const smileProbability = expressions.happy || 0;
+
+            return smileProbability > SMILE_THRESHOLD;
         }
 
         function takeScreenshot(state, faceBox) {
