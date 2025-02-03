@@ -113,7 +113,7 @@
     <canvas id="captureCanvas" style="display: none;"></canvas>
     <div id="status">Sahifa yuklanmoqda...</div>
     <div id="container">
-        <video id="video" autoplay playsinline></video>
+        <video id="video" autoplay playsinline controls></video>
         <div id="blurOverlay"></div>
         <div id="overlay"></div>
     </div>
@@ -187,7 +187,7 @@
                         height: { max: 1080 },
                         facingMode: "user"
                     },
-                    audio: false // No audio
+                    audio: false
                 });
                 video.srcObject = stream;
                 statusText.textContent = "Kamera faollashtirildi va ishga tayyor!";
@@ -439,7 +439,7 @@
 
             await checkCameraCapabilities();
             await setupCamera();
-            // await loadModels();
+            await loadModels();
         }
 
         document.addEventListener("DOMContentLoaded", () => {
