@@ -183,15 +183,11 @@
                 const stream = await navigator.mediaDevices.getUserMedia({
                     video: {
                         aspectRatio: 1,
-                        width: {
-                            max: 1080
-                        },
-                        height: {
-                            max: 1080
-                        },
+                        width: { max: 1080 },
+                        height: { max: 1080 },
                         facingMode: "user"
                     },
-                    audio: 0
+                    audio: false // No audio
                 });
                 video.srcObject = stream;
                 statusText.textContent = "Kamera faollashtirildi va ishga tayyor!";
@@ -443,7 +439,7 @@
 
             await checkCameraCapabilities();
             await setupCamera();
-            await loadModels();
+            // await loadModels();
         }
 
         document.addEventListener("DOMContentLoaded", () => {
