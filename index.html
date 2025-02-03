@@ -58,8 +58,11 @@
         /* Video va overlay uchun konteyner */
         #container {
             position: relative;
-            width: 640px;
-            height: 470px;
+            width: 100vw;
+            height: 70vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         video {
@@ -80,16 +83,17 @@
             transform: translate(-50%, -50%);
             border: 4px solid red;
             /* Standart qizil rang */
-            width: 250px;
-            height: 350px;
+            width: 80vw;
+            height: 50vh;
             border-radius: 50%;
             pointer-events: none;
         }
 
         #status {
+            height: 80px;
             margin-top: 10px;
             color: white;
-            font-size: 30px;
+            font-size: 7vw;
             text-align: center;
         }
 
@@ -100,9 +104,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            backdrop-filter: blur(40px);
+            backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(40px);
-            clip-path: path('M0,0H640V480H0Z M319,65 A125,175,0,1,0,319.9,65Z');
+            clip-path: path('M0,0H440V1600H0Z M250,95 A175,235,1,1,0,320,135Z');
             pointer-events: none;
         }
     </style>
