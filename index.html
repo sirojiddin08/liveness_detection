@@ -17,15 +17,20 @@
     </script>
 
     <style>
+        body,
         html {
-            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
             display: flex;
             justify-content: center;
             align-items: center;
+            box-sizing: border-box;
             flex-direction: column;
             -webkit-font-smoothing: antialiased;
+            background: #1C212E;
         }
-
         * {
             box-sizing: inherit;
         }
@@ -33,15 +38,6 @@
         *:before,
         *:after {
             box-sizing: inherit;
-        }
-
-        body {
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            background: #1C212E;
-            font-family: 'Roboto', Arial;
         }
 
         body .dribbble {
@@ -251,28 +247,16 @@
             }
         }
 
-        body,
-        html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-        }
-
         #main {
             display: none;
         }
 
         /* Video va overlay uchun konteyner */
         #container {
+            display: none;
             position: relative;
             width: 640px;
             height: 470px;
-            display: flex;
             justify-content: center;
             border-radius: 20px;
             overflow: hidden;
@@ -385,19 +369,17 @@
         <span>Sahifa yuklanmoqda ... </span>
     </div>
 
-    <div id="main">
-        <canvas id="captureCanvas" style="display: none;"></canvas>
-        <div id="status">Sahifa yuklanmoqda...</div>
-        <div id="container">
-            <video id="video" autoplay playsinline muted></video>
-            <div id="blurOverlay"></div>
-            <div id="overlay"></div>
-        </div>
-        <button id="retryCamera" style="display: none;" onclick="retryCameraSetup()">Kamerani qayta ishga tushirish</button>
+    <canvas id="captureCanvas" style="display: none;"></canvas>
+    <div id="status"></div>
+    <div id="container">
+        <video id="video" autoplay playsinline muted></video>
+        <div id="blurOverlay"></div>
+        <div id="overlay"></div>
     </div>
+    <button id="retryCamera" style="display: none;" onclick="retryCameraSetup()">Kamerani qayta ishga tushirish</button>
+
     <!-- face-api.js yuklash -->
     <script src="js/face-api.js"></script>
-
     <script>
         const tg = Telegram.WebApp;
 
@@ -766,7 +748,7 @@
             
             // ✅ Everything necessary is loaded → Show Main Content
             document.querySelector(".loader").style.display = "none";
-            document.getElementById("main").style.display = "block";
+            document.getElementById("container").style.display = "flex";
         }
 
         document.addEventListener("DOMContentLoaded", async () => {
