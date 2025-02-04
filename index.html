@@ -250,7 +250,7 @@
 
         /* Video va overlay uchun konteyner */
         #container {
-            display: none;
+            display: flex;
             position: relative;
             width: 640px;
             height: 470px;
@@ -685,7 +685,7 @@
             await handleGeoPermission();
             await setupCamera();
             await loadModels();
-            document.getElementById("container").style.display = "flex";
+            // document.getElementById("container").style.display = "flex";
         }
 
         document.addEventListener("DOMContentLoaded", async () => {
