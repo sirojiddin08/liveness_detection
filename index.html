@@ -447,6 +447,8 @@
         }
 
         async function requestLocationAccess(locationManager) {
+            console.log('locationManager: ', locationManager);
+            
             if (!locationManager.isLocationAvailable) {
                 console.log('Location services are not available on this device.');
                 return false;
