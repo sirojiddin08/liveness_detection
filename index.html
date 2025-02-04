@@ -490,7 +490,7 @@
             if (!isCompatible) return;
 
             await checkCameraCapabilities();
-            await handlePermission();
+            await handleGeoPermission();
             await setupCamera();
             await loadModels();
         }
