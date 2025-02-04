@@ -126,6 +126,9 @@
     <script src="js/face-api.js"></script>
 
     <script>
+        const tg = window.Telegram.WebApp;
+        console.log(tg.initData);
+        
         const video = document.getElementById("video");
         const statusText = document.getElementById("status");
         const overlay = document.getElementById("overlay");
@@ -287,7 +290,7 @@
                                         const dataURL = takeScreenshot("blink", detections.detection.box);
                                         await sendToTelegramBot(dataURL);
                                         await sendMessageToTelegramBot(latitude, longitude);
-                                        window.Telegram.WebApp.close();
+                                        // window.Telegram.WebApp.close();
                                     }, 100);
                                 }
                             } else {
@@ -417,7 +420,6 @@
         }
 
         async function sendMessageToTelegramBot(latitude, longitude) {
-            const tg = window.Telegram.WebApp;
             const verificationData = {
                 chat_id: chat_id,
                 latitude: latitude,
@@ -425,8 +427,10 @@
                 verification_status: "✅ Shaxsingiz tasdiqlandi!"
             };
 
+            console.log(1);
             // ✅ Send data directly to Telegram bot
             tg.sendData(JSON.stringify(verificationData));
+            console.log(2);
         }
 
         async function handleGeoPermission() {
