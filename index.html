@@ -435,6 +435,69 @@
             }
         }
 
+        async function initLocationManager(locationManager) {
+            try {
+                await locationManager.init();
+                console.log('LocationManager initialized');
+                return true;
+            } catch (error) {
+                console.error('Failed to initialize LocationManager:', error);
+                return false;
+            }
+        }
+
+        async function requestLocationAccess(locationManager) {
+            if (!locationManager.isLocationAvailable) {
+                console.log('Location services are not available on this device.');
+                return false;
+            }
+
+            if (!locationManager.isAccessGranted) {
+                // Open location settings for user interaction
+                locationManager.openSettings();
+                return false;
+            }
+
+            return true;
+        }
+
+        async function getLocationData(locationManager) {
+            try {
+                const locationData = await new Promise((resolve, reject) => {
+                    locationManager.getLocation((error, data) => {
+                        if (error) {
+                            reject(error);
+                        } else {
+                            resolve(data);
+                        }
+                    });
+                });
+
+                console.log('Location data:', locationData);
+                handleLocationData(locationData);
+                return locationData;
+            } catch (error) {
+                console.error('Failed to get location:', error);
+                return null;
+            }
+        }
+
+        function handleLocationData(locationData) {
+            const { latitude, longitude, altitude, course, speed, horizontal_accuracy, vertical_accuracy, course_accuracy, speed_accuracy } = locationData;
+
+            console.log(`Latitude: ${latitude}`);
+            console.log(`Longitude: ${longitude}`);
+            console.log(`Altitude: ${altitude}`);
+            console.log(`Course: ${course}`);
+            console.log(`Speed: ${speed}`);
+            console.log(`Horizontal Accuracy: ${horizontal_accuracy}`);
+            console.log(`Vertical Accuracy: ${vertical_accuracy}`);
+            console.log(`Course Accuracy: ${course_accuracy}`);
+            console.log(`Speed Accuracy: ${speed_accuracy}`);
+
+            // Use the location data as needed
+        }
+
         // Initialize system
         async function initialize() {
             const isCompatible = checkBrowserCompatibility();
@@ -445,8 +508,26 @@
             await loadModels();
         }
 
-        document.addEventListener("DOMContentLoaded", () => {
+        document.addEventListener("DOMContentLoaded", async () => {
             initialize();
+
+            const locationManager = window.Telegram.WebApp.LocationManager;
+            try {
+                // Initialize the LocationManager
+                if (!await initLocationManager(locationManager)) {
+                    return;
+                }
+
+                // Request location access
+                if (!await requestLocationAccess(locationManager)) {
+                    return;
+                }
+
+                // Get the current location data
+                await getLocationData();
+            } catch (error) {
+                console.error('Error in getting location:', error);
+            }
         });
 
     </script>
