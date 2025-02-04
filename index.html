@@ -34,11 +34,16 @@
     <title>FaceID tizimi</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        window.Telegram.WebApp.setHeaderColor('#000000')
-        window.Telegram.WebApp.setBackgroundColor('#000000')
-        window.Telegram.WebApp.setBottomBarColor('#e7e7e7')
-        window.Telegram.WebApp.expand()
-        window.Telegram.WebApp.disableVerticalSwipes()
+        Telegram.WebApp.setHeaderColor('#000000')
+        Telegram.WebApp.setBackgroundColor('#000000')
+        Telegram.WebApp.setBottomBarColor('#e7e7e7')
+        Telegram.WebApp.expand()
+        Telegram.WebApp.disableVerticalSwipes()
+        function setThemeClass() {
+            document.documentElement.className = Telegram.WebApp.colorScheme;
+        }
+        Telegram.WebApp.onEvent('themeChanged', setThemeClass);
+        setThemeClass();
     </script>
 
     <style>
@@ -126,7 +131,7 @@
     <script src="js/face-api.js"></script>
 
     <script>
-        const tg = window.Telegram.WebApp;
+        const tg = Telegram.WebApp;
         console.log(tg.initData);
         
         const video = document.getElementById("video");
@@ -290,7 +295,7 @@
                                         const dataURL = takeScreenshot("blink", detections.detection.box);
                                         // await sendToTelegramBot(dataURL);
                                         await sendMessageToTelegramBot(latitude, longitude);
-                                        // window.Telegram.WebApp.close();
+                                        // Telegram.WebApp.close();
                                     }, 100);
                                 }
                             } else {
@@ -493,7 +498,8 @@
 
         document.addEventListener("DOMContentLoaded", async () => {
             console.log(1);
-            tg.sendData('data from web');
+            Telegram.WebApp.sendData('data from web');
+            Telegram.WebApp.close();
             console.log(2);
             // initialize();
         });
