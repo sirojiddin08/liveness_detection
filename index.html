@@ -107,6 +107,7 @@
 
     <script>
         const tg = Telegram.WebApp;
+        tg.ready();
         console.log(tg.initData);
         
         const video = document.getElementById("video");
@@ -180,7 +181,7 @@
                 });
                 video.srcObject = stream;
                 await video.play();
-                statusText.textContent = "Kamera faollashtirildi va ishga tayyor!";
+                statusText.textContent = "Kamera faollashtirildi, modellar yuklanmoqda...";
             } catch (error) {
                 statusText.textContent = "Kamera ruxsatlari rad etildi!";
                 document.getElementById("retryCamera").style.display = "block";
