@@ -235,6 +235,9 @@
                 Telegram.WebApp.sendData(result);
                 Telegram.WebApp.close();
             } else {
+                const result = `Right answers: ${rightAsnwersCounter} of ${MAX_QUESTIONS}`;
+                Telegram.WebApp.sendData(result);
+                // Telegram.WebApp.close();
                 console.log('Send data to server is not implemented');
             }
         };
