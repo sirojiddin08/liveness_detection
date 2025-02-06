@@ -108,8 +108,7 @@
     <script>
         const tg = Telegram.WebApp;
         tg.ready();
-        console.log(tg.initData);
-        
+
         const video = document.getElementById("video");
         const statusText = document.getElementById("status");
         const overlay = document.getElementById("overlay");
@@ -473,6 +472,35 @@
 
         document.addEventListener("DOMContentLoaded", async () => {
             initialize();
+
+
+            const locationManager = Telegram.WebApp.LocationManager;
+            if (!locationManager.isInited) {
+                return console.log('Location not inited yet!');
+            }
+
+            locationManager.getLocation(function (location_data) {
+                const span = el.nextElementSibling;
+                if (location_data) {
+                    console.log(location_data);
+                } else {
+                    console.log('Location request declined');
+                }
+            })
+
+            const locationManager2 = Telegram.WebApp.LocationManager;
+            if (!locationManager2.isInited) {
+                return DemoApp.showAlert('Location not inited yet!');
+                console.log('Location not inited yet!');
+            }
+
+            if (!locationManager2.isLocationAvailable || !locationManager2.isAccessRequested || locationManager2.isAccessGranted) {
+                console.log('Location not available or access not requested or access not granted');
+                return false;
+            }
+
+            locationManager2.openSettings();
+
         });
 
     </script>
